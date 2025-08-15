@@ -47,12 +47,12 @@ jobs:
         pip install platformio
 
     - name: Build Firmware
-      run: platformio run --environment espressif32 --project-dir ${{ env.PLATFORMIO_PROJECT_DIR }}
+      run: platformio run --environment esp32doit-devkit-v1 --project-dir ${{ env.PLATFORMIO_PROJECT_DIR }}
 
     - name: Create GitHub Release
       uses: ncipollo/release-action@v1
       with:
         tag: ${{ env.VERSION }}
         name: "Firmware ${{ env.VERSION }}"
-        artifacts: .pio/build/espressif32/firmware.bin
+        artifacts: .pio/build/esp32doit-devkit-v1/firmware.bin
         token: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
