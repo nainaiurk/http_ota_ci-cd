@@ -1,0 +1,58 @@
+name: Build and Release Firmware
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'version.txt'
+
+env:
+  PLATFORMIO_PROJECT_DIR: .
+  VERSION_FILE: version.txt
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Read Version
+      id: read_version
+      run: echo "VERSION=$(cat ${{ env.VERSION_FILE }} | tr -d '[:space:]')" >> $GITHUB_ENV
+
+    - name: Check if Release Exists
+      id: check_release
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const version = process.env.VERSION;
+          const releases = await github.rest.repos.listReleases({
+            owner: context.repo.owner,
+            repo: context.repo.repo
+          });
+          const exists = releases.data.some(r => r.tag_name === version);
+          core.setOutput("exists", exists);
+
+    - name: Stop if Release Exists
+      if: steps.check_release.outputs.exists == 'true'
+      run: echo "Release already exists. Skipping build." && exit 0
+
+    - name: Install PlatformIO
+      run: |
+        python3 -m pip install --upgrade pip
+        pip install platformio
+
+    - name: Build Firmware
+      run: platformio run --environment espressif32 --project-dir ${{ env.PLATFORMIO_PROJECT_DIR }}
+
+    - name: Create GitHub Release
+      uses: ncipollo/release-action@v1
+      with:
+        tag: ${{ env.VERSION }}
+        name: "Firmware ${{ env.VERSION }}"
+        artifacts: .pio/build/espressif32/firmware.bin
+        token: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
