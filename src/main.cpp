@@ -11,7 +11,9 @@ const char* ssid = " ";  //
 const char* password = " ";
 String currentVersion = "v3.0";
 
-String getLatestReleaseTag(String &firmwareDownloadURL) {
+String firmwareDownloadURL;
+
+String getLatestReleaseTag() {
   WiFiClientSecure client;
   client.setInsecure(); // skip SSL cert validation
   HTTPClient http;
@@ -120,12 +122,11 @@ void setup() {
 }
 
 void loop() {
-  String firmwareURL;
-  String latestTag = getLatestReleaseTag(firmwareURL);
+  String latestTag = getLatestReleaseTag();
 
   if (latestTag.length() > 0 && latestTag != currentVersion) {
     Serial.printf("New version available: %s (current: %s)\n", latestTag.c_str(), currentVersion.c_str());
-    performOTA(firmwareURL);
+    performOTA(firmwareDownloadURL);
   } else {
     Serial.println("No update available.");
   }
